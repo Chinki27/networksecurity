@@ -3,3 +3,8 @@ pandas
 numpy
 matplotlib
 scikit-learn
+pymongo
+certifi
+
+
+##-e.
