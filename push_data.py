@@ -12,10 +12,10 @@ import certifi
 ca=certifi.where()
 
 import pandas as pd
-import numpy as np
+
 import pymongo
 from networksecurity.exception.exception import NetworkSecurityException
-from networksecurity.logging.logger import logging
+
 
 class NetworkDataExtract():
     def __init__(self):
