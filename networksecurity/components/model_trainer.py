@@ -20,6 +20,7 @@ from sklearn.ensemble import (
     AdaBoostClassifier,
     RandomForestClassifier
 )
+import mlflow.sklearn
 
 
 class ModelTrainer:
@@ -30,7 +31,32 @@ class ModelTrainer:
 
         except Exception as e:
              raise NetworkSecurityException(e,sys)
-        
+    def track_mlflow(self, best_model, classification_matric):
+
+        # Set the same tracking URI that your MLflow UI uses
+        mlflow.set_tracking_uri("http://127.0.0.1:5000")
+        mlflow.set_experiment("Default")
+
+        print("Tracking URI:", mlflow.get_tracking_uri())
+
+        if mlflow.active_run():
+            mlflow.end_run()
+
+        with mlflow.start_run():
+
+            print("Run ID:", mlflow.active_run().info.run_id)
+
+            mlflow.log_metric("f1_score", classification_matric.f1_score)
+            mlflow.log_metric("precision", classification_matric.precision_score)
+            mlflow.log_metric("recall_score", classification_matric.recall_score)
+
+            mlflow.sklearn.log_model(
+                sk_model=best_model,
+                artifact_path="model"
+            )
+
+            print("Finished logging")
+            
     def train_model(self,X_train,y_train,X_test,y_test):
         models={
             "RandomForest":RandomForestClassifier(verbose=1),
@@ -45,17 +71,17 @@ class ModelTrainer:
 
             },
             "RandomForest":{
-                'n_estimators':[8,16,32,64,128,256]
+                'n_estimators':[8,16,32,64]
             },
             "GradientBoosting":{
                 'learning_rate':[.1,.01,.05,.001],
                 'subsample':[0.6,0.7,0.75,0.8,0.85,0.9],
-                'n_estimators':[8,16,32,64,128,256]
+                'n_estimators':[8,16,32,64]
             },
             "LogisticRegression":{},
             "AdaBoost":{
                 'learning_rate':[.1,.01,.05,.001],
-                'n_estimators':[8,16,32,64,128,256]
+                'n_estimators':[8,16,32,64]
             }
         }
         model_report:dict=evaluate_models(X_train=X_train,y_train=y_train,X_test=X_test,
@@ -73,16 +99,22 @@ class ModelTrainer:
         y_train_pred=best_model.predict(X_train)
         classification_train_metric=get_clssification_score(y_true=y_train,y_pred=y_train_pred)
 
-        ## Track the ml flow
+        ## Track the experiments with mlflow
+
+        self.track_mlflow(best_model,classification_train_metric)
+
+
+
         y_test_pred=best_model.predict(X_test)
         classification_test_metric=get_clssification_score(y_true=y_test,y_pred=y_test_pred)
+        self.track_mlflow(best_model,classification_test_metric)
 
         preprocessor=load_object(file_path=self.data_transformation_artifact.transformed_object_file_path)
         model_dir_path=os.path.dirname(self.model_trainer_config.trained_model_file_path)
         os.makedirs(model_dir_path,exist_ok=True)
 
-        Network_Model=NetworkModel(preprocessor=preprocessor,model=best_model)
-        save_object(self.model_trainer_config.trained_model_file_path,obj=NetworkModel)
+        network_model=NetworkModel(preprocessor=preprocessor,model=best_model)
+        save_object(self.model_trainer_config.trained_model_file_path,obj=network_model)
 
         ## ModelTrainer artifact
 
