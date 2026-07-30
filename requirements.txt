@@ -9,5 +9,9 @@ pymongo[srv]==3.12
 
 pyaml
 mlflow==2.22.0
+dagshub
+fastapi
+uvicorn
+python-multipart
 
 ##-e.

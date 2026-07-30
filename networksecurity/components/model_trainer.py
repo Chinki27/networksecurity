@@ -21,6 +21,9 @@ from sklearn.ensemble import (
     RandomForestClassifier
 )
 import mlflow.sklearn
+import dagshub
+dagshub.init(repo_owner='Chinki27', repo_name='networksecurity', mlflow=True)
+
 
 
 class ModelTrainer:
@@ -34,17 +37,17 @@ class ModelTrainer:
     def track_mlflow(self, best_model, classification_matric):
 
         # Set the same tracking URI that your MLflow UI uses
-        mlflow.set_tracking_uri("http://127.0.0.1:5000")
-        mlflow.set_experiment("Default")
+        # mlflow.set_tracking_uri("http://127.0.0.1:5000")
+        # mlflow.set_experiment("Default")
 
-        print("Tracking URI:", mlflow.get_tracking_uri())
+        
 
         if mlflow.active_run():
             mlflow.end_run()
 
         with mlflow.start_run():
 
-            print("Run ID:", mlflow.active_run().info.run_id)
+            
 
             mlflow.log_metric("f1_score", classification_matric.f1_score)
             mlflow.log_metric("precision", classification_matric.precision_score)
@@ -58,6 +61,7 @@ class ModelTrainer:
             print("Finished logging")
             
     def train_model(self,X_train,y_train,X_test,y_test):
+
         models={
             "RandomForest":RandomForestClassifier(verbose=1),
             "DecisionTree":DecisionTreeClassifier(),
@@ -103,8 +107,6 @@ class ModelTrainer:
 
         self.track_mlflow(best_model,classification_train_metric)
 
-
-
         y_test_pred=best_model.predict(X_test)
         classification_test_metric=get_clssification_score(y_true=y_test,y_pred=y_test_pred)
         self.track_mlflow(best_model,classification_test_metric)
@@ -115,6 +117,8 @@ class ModelTrainer:
 
         network_model=NetworkModel(preprocessor=preprocessor,model=best_model)
         save_object(self.model_trainer_config.trained_model_file_path,obj=network_model)
+
+        save_object("final_model/model.pkl",best_model)
 
         ## ModelTrainer artifact
 
